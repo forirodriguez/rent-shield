@@ -1,7 +1,7 @@
 import { ROLE_DASHBOARD_ROUTES } from "@/lib/dashboard-content";
 import { requireAuth } from "@/lib/session";
+import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
-import type { UserRole } from "@/lib/generated/prisma/client";
 
 export default async function DashboardRedirectPage() {
   const session = await requireAuth();

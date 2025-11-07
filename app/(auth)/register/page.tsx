@@ -4,7 +4,7 @@ import { useState } from "react";
 import { registerUser } from "@/actions/auth.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { UserRole } from "@/lib/generated/prisma/client";
+import { UserRole } from "@prisma/client";
 
 type RoleOption = {
   value: UserRole;

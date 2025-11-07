@@ -1,6 +1,6 @@
 import type { RoleDashboardContent } from "@/lib/dashboard-content";
 import { LogoutButton } from "@/components/auth/logout-button";
-import type { UserRole } from "@/lib/generated/prisma/client";
+import { UserRole } from "@prisma/client";
 
 interface DashboardUser {
   name: string | null | undefined;
