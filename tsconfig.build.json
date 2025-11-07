@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".tmp/tsbuild",
+    "rootDir": ".",
+    "module": "commonjs",
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "allowJs": false,
+    "declaration": false,
+    "emitDeclarationOnly": false
+  },
+  "include": [
+    "actions/**/*.ts",
+    "lib/**/*.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "types/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".next", "tmp-test-register.js", "**/*.d.ts"]
+}
