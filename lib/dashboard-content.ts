@@ -1,4 +1,5 @@
 import { UserRole } from "@prisma/client";
+import { ROLE_NAVIGATION_MAP } from "@/lib/constants/roles";
 
 export interface DashboardStat {
   label: string;
@@ -30,12 +31,8 @@ export interface RoleDashboardContent {
   nextSteps: DashboardNextStep[];
 }
 
-export const ROLE_DASHBOARD_ROUTES: Record<UserRole, string> = {
-  [UserRole.SUPER_ADMIN]: "/super-admin/dashboard",
-  [UserRole.OWNER]: "/owner/dashboard",
-  [UserRole.MANAGER]: "/manager/dashboard",
-  [UserRole.TENANT]: "/tenant/dashboard",
-};
+export const ROLE_DASHBOARD_ROUTES: Record<UserRole, string> =
+  ROLE_NAVIGATION_MAP;
 
 export const ROLE_DASHBOARD_CONTENT: Record<UserRole, RoleDashboardContent> = {
   [UserRole.SUPER_ADMIN]: {

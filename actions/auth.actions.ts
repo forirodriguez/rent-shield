@@ -12,12 +12,27 @@ const registerSchema = z.object({
   role: z.nativeEnum(UserRole).optional(), // ← AGREGAR ESTA LÍNEA
 });
 
+type RegisterUserSuccess = {
+  success: true;
+  user: {
+    email: string;
+    role: UserRole;
+  };
+};
+
+type RegisterUserFailure = {
+  success: false;
+  error: string;
+};
+
+export type RegisterUserResult = RegisterUserSuccess | RegisterUserFailure;
+
 export async function registerUser(data: {
   name: string;
   email: string;
   password: string;
   role?: UserRole; // ← AGREGAR ESTA LÍNEA
-}) {
+}): Promise<RegisterUserResult> {
   try {
     const validated = registerSchema.parse(data);
     const requestedRole = validated.role ?? UserRole.TENANT;
@@ -51,7 +66,13 @@ export async function registerUser(data: {
       id: createdUser.id,
     });
 
-    return { success: true };
+    return {
+      success: true,
+      user: {
+        email: createdUser.email,
+        role: createdUser.role,
+      },
+    };
   } catch (error) {
     console.error("[registerUser] Error al crear usuario", {
       email: data.email,

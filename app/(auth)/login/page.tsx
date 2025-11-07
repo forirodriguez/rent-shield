@@ -1,63 +1,54 @@
-import { LoginForm } from "@/components/auth/login-form";
-/* import Link from "next/link"; */
-import { Suspense } from "react";
+import Link from "next/link"
 
-function LoginContent() {
+import { AuthCard } from "@/components/auth/auth-card"
+import { DemoCredentialsCard } from "@/components/auth/demo-credentials-card"
+import { LoginForm } from "@/components/auth/login-form"
+import { Button } from "@/components/ui/button"
+
+type SearchParams = Record<string, string | string[] | undefined>
+
+type LoginPageProps = {
+  searchParams?: Promise<SearchParams>
+}
+
+const DEFAULT_CALLBACK_URL = "/dashboard"
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolvedParams = (await searchParams) ?? {}
+  const callbackUrl = getCallbackUrl(resolvedParams)
+
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Bienvenido de nuevo
-          </h1>
-          <p className="text-gray-600">
-            Ingresa tus credenciales para continuar
-          </p>
-        </div>
-
-        {/* Login Form */}
-        <LoginForm />
-
-        {/* Divider */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
+    <section className="grid w-full max-w-5xl gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+      <AuthCard
+        title="Bienvenido de nuevo"
+        description="Ingresa tus credenciales o selecciona Google para continuar."
+        footer={
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>¿Aún no tienes cuenta?</span>
+            <Button asChild variant="link" className="px-0 text-primary">
+              <Link href="/register">Crea una cuenta</Link>
+            </Button>
           </div>
-        </div>
+        }
+      >
+        <LoginForm callbackUrl={callbackUrl} />
+      </AuthCard>
 
-        {/* Info Box - Credenciales de prueba */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-900 mb-2">
-            🔑 Credenciales de prueba
-          </h3>
-          <div className="space-y-1 text-xs text-blue-800">
-            <p>
-              <strong>Super Admin:</strong> superadmin@test.com
-            </p>
-            <p>
-              <strong>Owner:</strong> owner@test.com
-            </p>
-            <p>
-              <strong>Manager:</strong> manager@test.com
-            </p>
-            <p>
-              <strong>Tenant:</strong> tenant@test.com
-            </p>
-            <p className="mt-2 text-blue-600">
-              <strong>Password:</strong> password123
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+      <DemoCredentialsCard />
+    </section>
   );
 }
 
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div>Cargando...</div>}>
-      <LoginContent />
-    </Suspense>
-  );
+function getCallbackUrl(searchParams: SearchParams) {
+  const rawValue = searchParams.callbackUrl
+
+  if (!rawValue) {
+    return DEFAULT_CALLBACK_URL
+  }
+
+  if (Array.isArray(rawValue)) {
+    return rawValue[0] ?? DEFAULT_CALLBACK_URL
+  }
+
+  return rawValue
 }

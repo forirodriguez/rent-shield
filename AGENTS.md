@@ -133,32 +133,13 @@ body {
 2. Crear **wrappers** en `components/ui` para inyectar estilos base y tokens (por ejemplo, `Button.tsx` que extienda el `Button` de shadcn con tamaños/variants propios).
 3. Evitar duplicación: cualquier ajuste se hace en el wrapper, no en cada page.
 
-Ejemplo wrapper simple:
+### 3.1 Directiva UI/SSR obligatoria
 
-```tsx
-// src/components/ui/button.tsx
-"use client";
-import * as React from "react";
-import { Button as Base, type ButtonProps } from "@/components/shadcn/button"; // ruta según instalación
-import { twMerge } from "tailwind-merge";
-
-export interface RSButtonProps extends ButtonProps {
-  full?: boolean;
-}
-
-export function Button({ className, full, ...props }: RSButtonProps) {
-  return (
-    <Base
-      className={twMerge(
-        "rounded-(--radius) px-4 py-2 text-sm",
-        full && "w-full",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-```
+- **shadcn como base**: todo componente visual debe derivar de un wrapper de shadcn en `components/ui`; evita recrear primitivas con Tailwind sueltas salvo que no exista equivalente y documenta el motivo inline.
+- **SSR primero**: cada vista se implementa como Server Component; sólo marca `"use client"` en piezas interactivas aisladas y justifica el trade-off en un comentario corto.
+- **Code-splitting agresivo**: los componentes cliente deben ser los más pequeños posibles, importando lógica compartida desde Server Components/acciones; usa `React.lazy` o `next/dynamic` para cargar secciones interactivas pesadas y limita su superficie a handlers y estado local.
+- **Reutilización disciplinada**: cuando una UI se repita en múltiples dominios, promuévela a `components/modules/<dominio>` o `components/forms/<uso>` y reexporta desde un `index.ts` para mantener una sola fuente de estilos y props controladas.
+- **Convención de carpetas**: dentro de `/components`, mantén `ui/` (wrappers de shadcn), `forms/` (RHF + zod), `layout/` (shells estructurales) y subcarpetas por dominio (`modules/tenant`, `modules/owner`, etc.); crea nuevas carpetas sólo cuando existan ≥2 piezas relacionadas y documenta su propósito en el README del directorio si no es obvio.
 
 ---
 
@@ -189,13 +170,13 @@ if (process.env.NODE_ENV !== "production") global.prisma = prisma;
 
 **Reglas**
 
-- Importar siempre desde `@/lib/db/prisma`.
+- Importar siempre desde `"@prisma/client";`.
 - Evitar múltiples instancias en dev/hot-reload.
 - Usa `select` con typing explícito; no devolver entidades crudas a Cliente.
 
 ### 4.2 Migraciones y seguridad
 
-- Mantener `prisma/schema.prisma` como fuente de verdad; generar client a `lib/generated/prisma`.
+- Mantener `prisma/schema.prisma` como fuente de verdad; generar client a `"@prisma/client";`.
 - **Nunca** exponer campos sensibles (password, tokens).
 - Añadir índices cuando haya filtros frecuentes (email en `User` ya es único; evalúa índices compuestos por consultas reales).
 - Para paginación, preferir **cursor-based** sobre `skip/take` en tablas grandes.
