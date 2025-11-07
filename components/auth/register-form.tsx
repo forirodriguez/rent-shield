@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
-import { z } from "zod"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { registerUser } from "@/actions/auth.actions"
-import { Button } from "@/components/ui/button"
+import { registerUser } from "@/actions/auth.actions";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -17,29 +17,29 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { FieldError } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Spinner } from "@/components/ui/spinner"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/form";
+import { FieldError } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import {
   APP_ROLES,
   DEFAULT_APP_ROLE,
   getRoleNavigationPath,
   type AppRole,
-} from "@/lib/constants/roles"
+} from "@/lib/constants/roles";
 
-type RoleValue = AppRole
+type RoleValue = AppRole;
 
 type RoleOption = {
-  value: RoleValue
-  label: string
-  description: string
-  icon: string
-  accent: string
-}
+  value: RoleValue;
+  label: string;
+  description: string;
+  icon: string;
+  accent: string;
+};
 
 // Evitamos importar Prisma en el cliente manteniendo los valores del enum localmente.
 const ROLE_OPTIONS: RoleOption[] = [
@@ -71,21 +71,21 @@ const ROLE_OPTIONS: RoleOption[] = [
     icon: "⚡",
     accent: "text-purple-600",
   },
-]
+];
 
 const registerSchema = z
   .object({
     name: z
-      .string({ required_error: "El nombre es obligatorio" })
+      .string({ error: "El nombre es obligatorio" })
       .min(2, "Ingresa al menos 2 caracteres"),
     email: z
-      .string({ required_error: "El email es obligatorio" })
+      .string({ error: "El email es obligatorio" })
       .email("Ingresa un email válido"),
     password: z
-      .string({ required_error: "La contraseña es obligatoria" })
+      .string({ error: "La contraseña es obligatoria" })
       .min(8, "Debe tener al menos 8 caracteres"),
     confirmPassword: z
-      .string({ required_error: "Confirma tu contraseña" })
+      .string({ error: "Confirma tu contraseña" })
       .min(8, "Debe tener al menos 8 caracteres"),
     role: z.enum(APP_ROLES),
   })
@@ -95,15 +95,15 @@ const registerSchema = z
         code: z.ZodIssueCode.custom,
         path: ["confirmPassword"],
         message: "Las contraseñas no coinciden",
-      })
+      });
     }
-  })
+  });
 
-type RegisterValues = z.infer<typeof registerSchema>
+type RegisterValues = z.infer<typeof registerSchema>;
 
 export function RegisterForm() {
-  const router = useRouter()
-  const [serverError, setServerError] = useState<string | null>(null)
+  const router = useRouter();
+  const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -114,48 +114,48 @@ export function RegisterForm() {
       role: DEFAULT_APP_ROLE,
     },
     mode: "onSubmit",
-  })
+  });
 
   const onSubmit = async (values: RegisterValues) => {
-    setServerError(null)
+    setServerError(null);
     try {
       const result = await registerUser({
         name: values.name,
         email: values.email,
         password: values.password,
         role: values.role,
-      })
+      });
 
       if (!result.success) {
-        setServerError(result.error ?? "No pudimos crear tu cuenta")
-        return
+        setServerError(result.error ?? "No pudimos crear tu cuenta");
+        return;
       }
 
-      const resolvedRole = result.user.role as RoleValue
+      const resolvedRole = result.user.role as RoleValue;
 
       // Intentamos iniciar sesión automáticamente para redirigir al tablero correcto sin pasos extra.
       const authResult = await signIn("credentials", {
         email: result.user.email,
         password: values.password,
         redirect: false,
-      })
+      });
 
       if (authResult?.error) {
         // Si el inicio automático falla, devolvemos al login para que complete el flujo manualmente.
-        router.push("/login?registered=true")
-        router.refresh()
-        return
+        router.push("/login?registered=true");
+        router.refresh();
+        return;
       }
 
-      router.push(getRoleNavigationPath(resolvedRole))
-      router.refresh()
+      router.push(getRoleNavigationPath(resolvedRole));
+      router.refresh();
     } catch (error) {
-      setServerError("Ocurrió un error inesperado. Intenta nuevamente.")
-      console.error("Register error", error)
+      setServerError("Ocurrió un error inesperado. Intenta nuevamente.");
+      console.error("Register error", error);
     }
-  }
+  };
 
-  const isSubmitting = form.formState.isSubmitting
+  const isSubmitting = form.formState.isSubmitting;
 
   return (
     <div className="space-y-6">
@@ -177,8 +177,8 @@ export function RegisterForm() {
                     className="grid gap-3 sm:grid-cols-2"
                   >
                     {ROLE_OPTIONS.map((option) => {
-                      const radioId = `role-${option.value.toLowerCase()}`
-                      const isActive = field.value === option.value
+                      const radioId = `role-${option.value.toLowerCase()}`;
+                      const isActive = field.value === option.value;
 
                       return (
                         <Label
@@ -213,7 +213,7 @@ export function RegisterForm() {
                             {option.description}
                           </span>
                         </Label>
-                      )
+                      );
                     })}
                   </RadioGroup>
                 </FormControl>
@@ -328,5 +328,5 @@ export function RegisterForm() {
         </form>
       </Form>
     </div>
-  )
+  );
 }

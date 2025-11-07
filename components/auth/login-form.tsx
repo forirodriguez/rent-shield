@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { useState, type ComponentProps } from "react"
-import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import { useState, type ComponentProps } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -15,68 +15,66 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { FieldError, FieldSeparator } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Spinner } from "@/components/ui/spinner"
+} from "@/components/ui/form";
+import { FieldError, FieldSeparator } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 const loginSchema = z.object({
   email: z
-    .string({ required_error: "El email es obligatorio" })
+    .string({ error: "El email es obligatorio" })
     .email("Ingresa un email válido"),
   password: z
-    .string({ required_error: "La contraseña es obligatoria" })
+    .string({ error: "La contraseña es obligatoria" })
     .min(8, "La contraseña debe tener al menos 8 caracteres"),
-})
+});
 
-type LoginValues = z.infer<typeof loginSchema>
+type LoginValues = z.infer<typeof loginSchema>;
 
 type LoginFormProps = {
-  callbackUrl: string
-}
+  callbackUrl: string;
+};
 
 export function LoginForm({ callbackUrl }: LoginFormProps) {
-  const router = useRouter()
-  const [formError, setFormError] = useState<string | null>(null)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const router = useRouter();
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
     mode: "onSubmit",
-  })
+  });
 
   const handleCredentialsSubmit = async (values: LoginValues) => {
-    setFormError(null)
+    setFormError(null);
 
     const result = await signIn("credentials", {
       ...values,
       redirect: false,
-    })
+    });
 
     if (result?.error) {
-      setFormError(
-        "Credenciales inválidas. Verifica tu email y contraseña."
-      )
-      return
+      setFormError("Credenciales inválidas. Verifica tu email y contraseña.");
+      return;
     }
 
-    router.push(callbackUrl)
-    router.refresh()
-  }
+    router.push(callbackUrl);
+    router.refresh();
+  };
 
   const handleGoogleSignIn = async () => {
     try {
-      setFormError(null)
-      setIsGoogleLoading(true)
-      await signIn("google", { callbackUrl })
+      setFormError(null);
+      setIsGoogleLoading(true);
+      await signIn("google", { callbackUrl });
     } catch (error) {
-      setFormError("No se pudo iniciar sesión con Google.")
-      console.error("Google sign in error", error)
-      setIsGoogleLoading(false)
+      setFormError("No se pudo iniciar sesión con Google.");
+      console.error("Google sign in error", error);
+      setIsGoogleLoading(false);
     }
-  }
+  };
 
-  const isSubmitting = form.formState.isSubmitting
+  const isSubmitting = form.formState.isSubmitting;
 
   return (
     <div className="space-y-6">
@@ -167,7 +165,7 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
         )}
       </Button>
     </div>
-  )
+  );
 }
 
 function GoogleIcon(props: ComponentProps<"svg">) {
@@ -190,5 +188,5 @@ function GoogleIcon(props: ComponentProps<"svg">) {
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
       />
     </svg>
-  )
+  );
 }
