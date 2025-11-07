@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { UserRole } from "./lib/generated/prisma/client";
 
 const publicRoutes = ["/", "/login", "/register"];
 
