@@ -1,4 +1,4 @@
-import { RoleDashboardView } from "@/components/dashboard/dashboard-view";
+import { RoleDashboardView } from "@/components/modules/dashboard/role-dashboard-view";
 import { ROLE_DASHBOARD_CONTENT } from "@/lib/dashboard-content";
 import { requireRole } from "@/lib/session";
 import { UserRole } from "@prisma/client";
