@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import type { Session } from "next-auth";
-import { UserRole } from "./generated/prisma/client";
+import { UserRole } from "@prisma/client";
 
 type SessionUser = NonNullable<Session["user"]> & {
   id: string;
