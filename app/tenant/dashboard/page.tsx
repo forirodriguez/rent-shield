@@ -1,7 +1,7 @@
 import { RoleDashboardView } from "@/components/dashboard/dashboard-view";
 import { ROLE_DASHBOARD_CONTENT } from "@/lib/dashboard-content";
 import { requireRole } from "@/lib/session";
-import { UserRole } from "@/lib/generated/prisma/client";
+import { UserRole } from "@prisma/client";
 
 export default async function TenantDashboardPage() {
   const session = await requireRole(UserRole.TENANT);
