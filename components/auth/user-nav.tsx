@@ -55,7 +55,7 @@ export function UserNav() {
           <p className="text-xs text-gray-500">{session.user.role}</p>
         </div>
       </div>
-      <LogoutButton variant="outline" />
+      <LogoutButton />
     </div>
   );
 }
