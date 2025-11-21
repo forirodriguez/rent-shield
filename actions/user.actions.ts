@@ -11,16 +11,16 @@ import { APP_ROLES } from "@/lib/constants/roles";
 
 const createUserSchema = z.object({
   name: z
-    .string({ errorMap: () => ({ message: "El nombre es obligatorio" }) })
+    .string({ error: "El nombre es obligatorio" })
     .min(2, "Ingresa al menos 2 caracteres"),
   email: z
-    .string({ errorMap: () => ({ message: "El email es obligatorio" }) })
-    .email({ message: "Ingresa un email válido" }),
+    .string({ error: "El email es obligatorio" })
+    .email("Ingresa un email válido"),
   password: z
-    .string({ errorMap: () => ({ message: "La contraseña es obligatoria" }) })
+    .string({ error: "La contraseña es obligatoria" })
     .min(8, "Debe tener al menos 8 caracteres"),
   role: z.enum(APP_ROLES, {
-    errorMap: () => ({ message: "Selecciona un rol válido" }),
+    error: "Selecciona un rol válido",
   }),
 });
 

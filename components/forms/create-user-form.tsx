@@ -31,18 +31,18 @@ import type { CreateUserInput } from "@/actions/user.actions";
 
 type CreateUserFormValues = CreateUserInput;
 
-const createUserFormSchema: z.ZodType<CreateUserFormValues> = z.object({
+const createUserFormSchema = z.object({
   name: z
-    .string({ required_error: "El nombre es obligatorio" })
+    .string({ error: "El nombre es obligatorio" })
     .min(2, "Ingresa al menos 2 caracteres"),
   email: z
-    .string({ required_error: "El email es obligatorio" })
+    .string({ error: "El email es obligatorio" })
     .email("Ingresa un email válido"),
   password: z
-    .string({ required_error: "La contraseña es obligatoria" })
+    .string({ error: "La contraseña es obligatoria" })
     .min(8, "Debe tener al menos 8 caracteres"),
   role: z.enum(APP_ROLES, {
-    errorMap: () => ({ message: "Selecciona un rol válido" }),
+    error: "Selecciona un rol válido",
   }),
 });
 
