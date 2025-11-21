@@ -23,7 +23,6 @@
 # misc
 .DS_Store
 *.pem
-AGENTS.md
 
 # debug
 npm-debug.log*
@@ -36,6 +35,7 @@ yarn-error.log*
 
 # vercel
 .vercel
+DEMO_USERS.md
 
 # typescript
 *.tsbuildinfo

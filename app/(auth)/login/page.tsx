@@ -34,7 +34,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <LoginForm callbackUrl={callbackUrl} />
       </AuthCard>
 
-      <DemoCredentialsCard />
+      <DemoCredentialsCard callbackUrl={callbackUrl} />
     </section>
   );
 }

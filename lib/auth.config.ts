@@ -18,29 +18,57 @@ export default {
     }),
     Credentials({
       async authorize(credentials) {
+        console.log('🔐 [AUTH] Starting authorization...');
+        console.log('🔐 [AUTH] Credentials received:', { email: credentials?.email, hasPassword: !!credentials?.password });
+        
         const validated = loginSchema.safeParse(credentials);
 
-        if (!validated.success) return null;
+        if (!validated.success) {
+          console.log('❌ [AUTH] Validation failed:', validated.error.issues);
+          return null;
+        }
 
         const { email, password } = validated.data;
+        console.log('🔐 [AUTH] Looking up user:', email);
 
-        const user = await db.user.findUnique({
-          where: { email },
-        });
+        try {
+          const user = await db.user.findUnique({
+            where: { email },
+          });
 
-        if (!user || !user.password) return null;
+          if (!user) {
+            console.log('❌ [AUTH] User not found:', email);
+            return null;
+          }
 
-        const passwordMatch = await bcrypt.compare(password, user.password);
+          console.log('✅ [AUTH] User found:', { id: user.id, email: user.email, hasPassword: !!user.password });
 
-        if (!passwordMatch) return null;
+          if (!user.password) {
+            console.log('❌ [AUTH] User has no password (OAuth user)');
+            return null;
+          }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          image: user.image,
-        };
+          console.log('🔐 [AUTH] Comparing passwords...');
+          const passwordMatch = await bcrypt.compare(password, user.password);
+
+          if (!passwordMatch) {
+            console.log('❌ [AUTH] Password mismatch');
+            return null;
+          }
+
+          console.log('✅ [AUTH] Password match! Login successful');
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            image: user.image,
+          };
+        } catch (error) {
+          console.error('❌ [AUTH] Error during authorization:', error);
+          return null;
+        }
       },
     }),
   ],
