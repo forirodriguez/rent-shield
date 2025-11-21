@@ -380,7 +380,305 @@ export function CreateUserForm() {
 
 ---
 
+## 7.1) Zod v4 — Sintaxis correcta y errores comunes
+
+> **CRÍTICO**: Este proyecto usa **Zod v4**, que tiene cambios importantes en la API de mensajes de error. Usar sintaxis de v3 causará errores de build en producción.
+
+### 7.1.1 Sintaxis correcta para mensajes de error
+
+**✅ CORRECTO (Zod v4)**
+```typescript
+import { z } from "zod";
+
+// Para campos requeridos, usa { error: "mensaje" }
+const schema = z.object({
+  name: z.string({ error: "El nombre es obligatorio" }),
+  email: z.string({ error: "El email es obligatorio" }).email("Email inválido"),
+  age: z.number({ error: "La edad es obligatoria" }).min(18, "Debes ser mayor de edad"),
+  role: z.enum(["ADMIN", "USER"], { error: "Selecciona un rol válido" }),
+});
+```
+
+**❌ INCORRECTO (Zod v3 - causará errores de build)**
+```typescript
+// NO USAR - sintaxis de Zod v3
+const schema = z.object({
+  name: z.string({ required_error: "mensaje" }), // ❌ required_error no existe en v4
+  email: z.string({ errorMap: () => ({ message: "mensaje" }) }), // ❌ errorMap en params no existe
+  role: z.enum(["ADMIN"], { errorMap: () => ({ message: "mensaje" }) }), // ❌ errorMap en enum
+});
+```
+
+### 7.1.2 Patrones comunes
+
+**Strings con validación**
+```typescript
+const UserSchema = z.object({
+  // Campo requerido con mensaje personalizado
+  name: z.string({ error: "El nombre es obligatorio" })
+    .min(2, "Mínimo 2 caracteres")
+    .max(50, "Máximo 50 caracteres"),
+  
+  // Email
+  email: z.string({ error: "El email es obligatorio" })
+    .email("Ingresa un email válido"),
+  
+  // Password con múltiples validaciones
+  password: z.string({ error: "La contraseña es obligatoria" })
+    .min(8, "Mínimo 8 caracteres")
+    .max(128, "Máximo 128 caracteres")
+    .regex(/[A-Z]/, "Debe contener al menos una mayúscula"),
+});
+```
+
+**Numbers con validación**
+```typescript
+const ProductSchema = z.object({
+  price: z.number({ error: "El precio es obligatorio" })
+    .positive("Debe ser mayor a 0")
+    .max(999999, "Precio demasiado alto"),
+  
+  quantity: z.number({ error: "La cantidad es obligatoria" })
+    .int("Debe ser un número entero")
+    .min(1, "Mínimo 1 unidad"),
+});
+```
+
+**Enums**
+```typescript
+const APP_ROLES = ["SUPER_ADMIN", "OWNER", "MANAGER", "TENANT"] as const;
+
+const CreateUserSchema = z.object({
+  role: z.enum(APP_ROLES, {
+    error: "Selecciona un rol válido", // ✅ Correcto en v4
+  }),
+});
+```
+
+**Opcionales y defaults**
+```typescript
+const ConfigSchema = z.object({
+  // Campo opcional
+  description: z.string().optional(),
+  
+  // Campo opcional con mensaje si se proporciona pero es inválido
+  website: z.string({ error: "URL inválida" }).url().optional(),
+  
+  // Con valor por defecto
+  isActive: z.boolean().default(true),
+  
+  // Opcional con transformación
+  tags: z.array(z.string()).optional().default([]),
+});
+```
+
+### 7.1.3 Integración con React Hook Form
+
+**✅ Patrón correcto**
+```typescript
+"use client";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// Schema SIN anotación de tipo explícita (deja que Zod infiera)
+const formSchema = z.object({
+  name: z.string({ error: "El nombre es obligatorio" })
+    .min(2, "Mínimo 2 caracteres"),
+  email: z.string({ error: "El email es obligatorio" })
+    .email("Email inválido"),
+});
+
+// Inferir tipo del schema
+type FormValues = z.infer<typeof formSchema>;
+
+export function MyForm() {
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema), // ✅ Funciona correctamente
+    defaultValues: {
+      name: "",
+      email: "",
+    },
+  });
+
+  // ...resto del componente
+}
+```
+
+**❌ Evitar anotaciones de tipo explícitas**
+```typescript
+// ❌ NO HACER - puede causar conflictos de tipos
+const formSchema: z.ZodType<FormValues> = z.object({
+  // ...
+});
+```
+
+### 7.1.4 Server Actions con Zod
+
+```typescript
+"use server";
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
+import { db } from "@/lib/db";
+
+// Schema para validación de input
+const createUserSchema = z.object({
+  name: z.string({ error: "El nombre es obligatorio" })
+    .min(2, "Mínimo 2 caracteres"),
+  email: z.string({ error: "El email es obligatorio" })
+    .email("Email inválido"),
+  password: z.string({ error: "La contraseña es obligatoria" })
+    .min(8, "Mínimo 8 caracteres"),
+  role: z.enum(["SUPER_ADMIN", "OWNER", "MANAGER", "TENANT"], {
+    error: "Rol inválido",
+  }),
+});
+
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+
+export async function createUser(input: CreateUserInput) {
+  try {
+    // Validar input
+    const data = createUserSchema.parse(input);
+    
+    // Crear usuario
+    const user = await db.user.create({ data });
+    
+    // Revalidar
+    revalidatePath("/admin/users");
+    
+    return { success: true, user };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      // Acceder a errores con .issues (NO .errors)
+      return { 
+        success: false, 
+        error: "Datos inválidos",
+        issues: error.issues, // ✅ Correcto
+      };
+    }
+    return { success: false, error: "Error al crear usuario" };
+  }
+}
+```
+
+### 7.1.5 Manejo de errores de Zod
+
+**✅ Acceder a errores correctamente**
+```typescript
+try {
+  schema.parse(data);
+} catch (error) {
+  if (error instanceof z.ZodError) {
+    // ✅ Usar .issues (NO .errors)
+    console.log(error.issues);
+    
+    // Formatear errores para el usuario
+    const formattedErrors = error.issues.map(issue => ({
+      field: issue.path.join("."),
+      message: issue.message,
+    }));
+  }
+}
+```
+
+**❌ Forma incorrecta**
+```typescript
+try {
+  schema.parse(data);
+} catch (error) {
+  if (error instanceof z.ZodError) {
+    console.log(error.errors); // ❌ .errors no existe en Zod v4
+  }
+}
+```
+
+### 7.1.6 Transformaciones y refinamientos
+
+```typescript
+const TransformSchema = z.object({
+  // Transformar string a número
+  age: z.string()
+    .transform(val => parseInt(val, 10))
+    .pipe(z.number().min(18, "Debes ser mayor de edad")),
+  
+  // Refinamiento personalizado
+  password: z.string({ error: "Contraseña requerida" })
+    .min(8)
+    .refine(
+      val => /[A-Z]/.test(val),
+      { message: "Debe contener al menos una mayúscula" }
+    ),
+  
+  // Validación condicional
+  confirmPassword: z.string(),
+}).refine(
+  data => data.password === data.confirmPassword,
+  {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmPassword"], // Especifica dónde mostrar el error
+  }
+);
+```
+
+### 7.1.7 Checklist de migración Zod v3 → v4
+
+Si encuentras código con sintaxis v3, actualízalo así:
+
+- [ ] `{ required_error: "..." }` → `{ error: "..." }`
+- [ ] `{ errorMap: () => ({ message: "..." }) }` → `{ error: "..." }`
+- [ ] `.email({ message: "..." })` → `.email("...")`
+- [ ] `.min(n, { message: "..." })` → `.min(n, "...")`
+- [ ] `error.errors` → `error.issues`
+- [ ] Remover anotaciones `z.ZodType<T>` en schemas de formularios
+
+### 7.1.8 Errores de build comunes y soluciones
+
+**Error**: `Property 'errorMap' does not exist`
+```typescript
+// ❌ Causa
+z.string({ errorMap: () => ({ message: "..." }) })
+
+// ✅ Solución
+z.string({ error: "..." })
+```
+
+**Error**: `Property 'required_error' does not exist`
+```typescript
+// ❌ Causa
+z.string({ required_error: "..." })
+
+// ✅ Solución
+z.string({ error: "..." })
+```
+
+**Error**: `Property 'errors' does not exist on type 'ZodError'`
+```typescript
+// ❌ Causa
+if (error instanceof z.ZodError) {
+  console.log(error.errors);
+}
+
+// ✅ Solución
+if (error instanceof z.ZodError) {
+  console.log(error.issues);
+}
+```
+
+**Error**: Type conflicts con `zodResolver`
+```typescript
+// ❌ Causa
+const schema: z.ZodType<FormValues> = z.object({ ... });
+
+// ✅ Solución - dejar que Zod infiera el tipo
+const schema = z.object({ ... });
+type FormValues = z.infer<typeof schema>;
+```
+
+---
+
 ## 8) Seguridad y exposición de datos
+
 
 - Nunca enviar `password`, `refresh_token`, `access_token` al cliente.
 - En `jwt()` incluir sólo `id`, `role` y metadatos no sensibles.
@@ -628,6 +926,7 @@ export default function LoginForm() {
 - **RHF + Server Actions**: si pasas la action a un Client Component, manéjala con try/catch y feedback.
 - **Tailwind v4**: tokens en `@theme`, no en `tailwind.config.js`.
 - **Prisma en dev**: múltiples instancias si no usas singleton; puede lanzar warnings.
+- **Zod v4**: usar sintaxis v3 (`required_error`, `errorMap` en params, `error.errors`) causará errores de build. Ver §7.1 para sintaxis correcta.
 
 ---
 
